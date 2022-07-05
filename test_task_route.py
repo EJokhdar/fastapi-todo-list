@@ -95,7 +95,18 @@ def test_get_all_task(client):
     assert check_if_deleted.status_code == 404, check_if_deleted.text
 
 
-def test_delete_task(client, create_delete_task):
+def test_get_task(client, redis, create_delete_task):
+    task = create_delete_task.json()
+    task_id = task["task_id"]
+
+    get_task = client.get(
+        f"/tasks/{task_id}"
+    )
+
+    assert get_task.status_code == 200, get_task.text
+
+
+def test_delete_task(client, redis, create_delete_task):
     task = create_delete_task.json()
     task_id = task["task_id"]
 
@@ -119,7 +130,7 @@ def test_delete_task(client, create_delete_task):
     assert response.status_code == 404, response.text
 
 
-def test_toggle_task(client, create_delete_task):
+def test_toggle_task(client, redis, create_delete_task):
     task = create_delete_task.json()
     task_id = task["task_id"]
     task_checked = task["checked"]
@@ -141,7 +152,7 @@ def test_toggle_task(client, create_delete_task):
     assert data_request["checked"] != data["checked"]
 
 
-def test_update_task(client, create_delete_task):
+def test_update_task(client, redis, create_delete_task):
     task = create_delete_task.json()
     task_id = task["task_id"]
     task_name = task["task_name"]

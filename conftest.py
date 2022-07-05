@@ -2,8 +2,11 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy import create_engine
 from fastapi.testclient import TestClient
 from database import Base
-from main import app, get_db
+from main import app
+from dependencies import get_db_session
+from dependencies import get_redis_client
 import pytest
+from redis import Redis
 
 engine = create_engine(
     "postgresql://postgres:332001@localhost/test_todo_db", echo=True)
@@ -15,15 +18,26 @@ Base.metadata.create_all(bind=engine)
 
 @pytest.fixture
 def client():
-    def override_get_db():
+    def override_get_db_session():
         try:
             db = TestSessionLocal()
             yield db
         finally:
             db.close()
-    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_db_session] = override_get_db_session
     client = TestClient(app)
+
     yield client
+
+
+@pytest.fixture
+def redis():
+    def override_get_redis_client():
+        redis_client = Redis(host="localhost", port=6379, db=0)
+        yield redis_client
+    app.dependency_overrides[get_redis_client] = override_get_redis_client
+    redis = Redis(host="localhost", port=6379, db=0)
+    yield redis
 
 
 @pytest.fixture(scope="function")
